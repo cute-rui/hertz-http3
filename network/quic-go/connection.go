@@ -29,7 +29,7 @@ type conn struct {
 }
 
 type versioner interface {
-	GetVersion() quicgo.VersionNumber
+	GetVersion() quicgo.Version
 }
 
 func (c *conn) GetVersion() uint32 {
@@ -75,6 +75,6 @@ func (c *conn) CloseWithError(err network.ApplicationError, errMsg string) error
 	return c.EarlyConnection.CloseWithError(quicgo.ApplicationErrorCode(err.ErrCode()), errMsg)
 }
 
-func newStreamConn(qc quicgo.EarlyConnection) network.StreamConn {
+func newStreamConn(qc quicgo.EarlyConnection) *conn {
 	return &conn{qc, qc}
 }
