@@ -23,13 +23,20 @@ import (
 
 var _ network.Stream = &stream{}
 
+// DirtyWorkaround, really confusing, but at least it works
+
+type streamWrapper struct {
+	*quic.Stream
+}
+
+
 type stream struct {
 	network.ReceiveStream
 	network.SendStream
 }
 
 type readStream struct {
-	quic.ReceiveStream
+	*quic.ReceiveStream
 }
 
 func (r *readStream) CancelRead(err network.ApplicationError) {
@@ -41,7 +48,7 @@ func (r *readStream) StreamID() int64 {
 }
 
 type writeStream struct {
-	quic.SendStream
+	*quic.SendStream
 }
 
 func (w *writeStream) CancelWrite(err network.ApplicationError) {
@@ -57,17 +64,26 @@ func (w *writeStream) StreamID() int64 {
 	return int64(w.SendStream.StreamID())
 }
 
-func newReadStream(s quic.ReceiveStream) network.ReceiveStream {
+func newReadStream(s *quic.ReceiveStream) network.ReceiveStream {
 	return &readStream{s}
 }
 
-func newWriteStream(s quic.SendStream) network.SendStream {
+func newWriteStream(s *quic.SendStream) network.SendStream {
 	return &writeStream{s}
 }
 
-func newStream(s quic.Stream) network.Stream {
-	return &stream{
-		ReceiveStream: newReadStream(s),
-		SendStream:    newWriteStream(s),
-	}
+func (w *streamWrapper) CancelRead(err network.ApplicationError) {
+	w.Stream.CancelRead(quic.StreamErrorCode(err.ErrCode()))
+}
+
+func (w *streamWrapper) CancelWrite(err network.ApplicationError) {
+	w.Stream.CancelWrite(quic.StreamErrorCode(err.ErrCode()))
+}
+
+func (w *streamWrapper) StreamID() int64 {
+	return int64(w.Stream.StreamID())
+}
+
+func newStream(s *quic.Stream) network.Stream {
+	return &streamWrapper{s}
 }

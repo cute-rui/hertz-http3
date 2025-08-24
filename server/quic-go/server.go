@@ -58,7 +58,7 @@ func (h *handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (s *Server) Serve(c context.Context, conn network.StreamConn) error {
-	cc, ok := conn.GetRawConnection().(quic.Connection)
+	cc, ok := conn.GetRawConnection().(*quic.Conn)
 	if !ok {
 		return errors.NewPublicf("network-go http3: cannot convert raw connection to network.Connection")
 	}

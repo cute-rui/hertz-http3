@@ -25,7 +25,7 @@ import (
 
 type conn struct {
 	rawConn interface{}
-	quicgo.EarlyConnection
+	c *quicgo.Conn
 }
 
 type versioner interface {
@@ -33,8 +33,7 @@ type versioner interface {
 }
 
 func (c *conn) GetVersion() uint32 {
-	cc := c.EarlyConnection.(versioner)
-	return uint32(cc.GetVersion())
+	return uint32(c.c.ConnectionState().Version)
 }
 
 func (c *conn) GetRawConnection() interface{} {
@@ -42,39 +41,39 @@ func (c *conn) GetRawConnection() interface{} {
 }
 
 func (c *conn) AcceptStream(ctx context.Context) (network.Stream, error) {
-	stream, err := c.EarlyConnection.AcceptStream(ctx)
+	stream, err := c.c.AcceptStream(ctx)
 	return newStream(stream), err
 }
 
 func (c *conn) AcceptUniStream(ctx context.Context) (network.ReceiveStream, error) {
-	stream, err := c.EarlyConnection.AcceptUniStream(ctx)
+	stream, err := c.c.AcceptUniStream(ctx)
 	return newReadStream(stream), err
 }
 
 func (c *conn) OpenStream() (network.Stream, error) {
-	stream, err := c.EarlyConnection.OpenStream()
+	stream, err := c.c.OpenStream()
 	return newStream(stream), err
 }
 
 func (c *conn) OpenStreamSync(ctx context.Context) (network.Stream, error) {
-	stream, err := c.EarlyConnection.OpenStreamSync(ctx)
+	stream, err := c.c.OpenStreamSync(ctx)
 	return newStream(stream), err
 }
 
 func (c *conn) OpenUniStream() (network.SendStream, error) {
-	stream, err := c.EarlyConnection.OpenUniStream()
+	stream, err := c.c.OpenUniStream()
 	return newWriteStream(stream), err
 }
 
 func (c *conn) OpenUniStreamSync(ctx context.Context) (network.SendStream, error) {
-	stream, err := c.EarlyConnection.OpenUniStreamSync(ctx)
+	stream, err := c.c.OpenUniStreamSync(ctx)
 	return newWriteStream(stream), err
 }
 
 func (c *conn) CloseWithError(err network.ApplicationError, errMsg string) error {
-	return c.EarlyConnection.CloseWithError(quicgo.ApplicationErrorCode(err.ErrCode()), errMsg)
+	return c.c.CloseWithError(quicgo.ApplicationErrorCode(err.ErrCode()), errMsg)
 }
 
-func newStreamConn(qc quicgo.EarlyConnection) *conn {
+func newStreamConn(qc *quicgo.Conn) *conn {
 	return &conn{qc, qc}
 }
