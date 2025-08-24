@@ -18,18 +18,27 @@ package quic
 
 import (
 	"context"
+	"net"
 
 	"github.com/cloudwego/hertz/pkg/network"
 	quicgo "github.com/quic-go/quic-go"
 )
+
+var _ network.StreamConn = &conn{}
 
 type conn struct {
 	rawConn interface{}
 	c *quicgo.Conn
 }
 
-type versioner interface {
-	GetVersion() quicgo.Version
+//Dirty hack
+type ctx struct {
+	context.Context
+	c *quicgo.Conn
+}
+
+func (c *ctx) Done() <-chan struct{} {
+	return c.c.HandshakeComplete()
 }
 
 func (c *conn) GetVersion() uint32 {
@@ -72,6 +81,22 @@ func (c *conn) OpenUniStreamSync(ctx context.Context) (network.SendStream, error
 
 func (c *conn) CloseWithError(err network.ApplicationError, errMsg string) error {
 	return c.c.CloseWithError(quicgo.ApplicationErrorCode(err.ErrCode()), errMsg)
+}
+
+func (c *conn) Context() context.Context {
+	return c.c.Context()
+}
+
+func (c *conn) HandshakeComplete() context.Context {
+	return &ctx{context.Background(), c.c}
+}
+
+func (c *conn) LocalAddr() net.Addr {
+	return c.c.LocalAddr()
+}
+
+func (c *conn) RemoteAddr() net.Addr {
+	return c.c.RemoteAddr()
 }
 
 func newStreamConn(qc *quicgo.Conn) *conn {

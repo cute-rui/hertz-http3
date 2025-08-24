@@ -77,6 +77,7 @@ func (t *transport) serveConn(tlsConf *tls.Config, conn net.PacketConn) error {
 		quicConf.EnableDatagrams = true
 	}
 
+	println("processing early listener")
 	var ln *quic.EarlyListener
 	var err error
 	if conn == nil {
@@ -85,8 +86,10 @@ func (t *transport) serveConn(tlsConf *tls.Config, conn net.PacketConn) error {
 			addr = ":https"
 		}
 		ln, err = quic.ListenAddrEarly(addr, baseConf, quicConf)
+		println("early listener")
 	} else {
 		ln, err = quic.ListenEarly(conn, baseConf, quicConf)
+		println("early listener")
 	}
 	if err != nil {
 		return err
@@ -99,6 +102,7 @@ func (t *transport) serveConn(tlsConf *tls.Config, conn net.PacketConn) error {
 func (t *transport) serveListener(ln *quic.EarlyListener) error {
 	for {
 		conn, err := ln.Accept(context.Background())
+		println("accept", conn, err)
 		if err != nil {
 			return err
 		}

@@ -23,7 +23,7 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/cloudwego/hertz/pkg/common/utils"
-	"github.com/cloudwego/hertz/pkg/network/netpoll"
+	netpoll "github.com/cloudwego/hertz/pkg/network/standard"
 	"github.com/cloudwego/hertz/pkg/protocol/consts"
 	"github.com/cloudwego/hertz/pkg/protocol/suite"
 	"github.com/hertz-contrib/http3/network/quic-go"
@@ -42,7 +42,7 @@ func main() {
 }
 
 func run() {
-	h := server.New(server.WithALPN(true), server.WithTLS(testdata.GetTLSConfig()), server.WithTransport(quic.NewTransporter), server.WithAltTransport(netpoll.NewTransporter), server.WithHostPorts("127.0.0.1:8080"))
+	h := server.New(server.WithALPN(true), server.WithTLS(testdata.GetTLSConfig()), server.WithTransport(quic.NewTransporter), server.WithAltTransport(netpoll.NewTransporter), server.WithHostPorts("0.0.0.0:8080"))
 	h.AddProtocol(suite.HTTP3, factory.NewServerFactory(&http3.Option{}))
 
 	h.GET("/demo/tile", func(c context.Context, ctx *app.RequestContext) {
